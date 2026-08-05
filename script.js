@@ -20,15 +20,10 @@ const evento = {
 
 /* ==========================================================
    CONFIGURACIÓN DE SUPABASE
-   --------------------------------------------------------
-   1. Crea un proyecto gratuito en https://supabase.com
-   2. Ve a Project Settings -> API
-   3. Copia "Project URL" y pégalo en SUPABASE_URL
-   4. Copia la "anon public" key y pégala en SUPABASE_ANON_KEY
-   Instrucciones completas en README.md
    ========================================================== */
 const SUPABASE_URL = "https://kyudezssecqqutgadqbe.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dWRlenNzZWNxcXV0Z2FkcWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4ODkyNTcsImV4cCI6MjEwMTQ2NTI1N30.z2xxwoft2DBXZZ8ww4ikqQG_8U-WYofan_fSWqyDa0I";
+
 let supabaseClient = null;
 try {
   if (
@@ -121,12 +116,11 @@ function pintarDatosEvento() {
     </div>
   `).join("");
 
-  // Volver a observar las nuevas tarjetas con el IntersectionObserver
   observarReveal();
 }
 
 /* ==========================================================
-   GALERÍA (imágenes de ejemplo — reemplázalas en assets/img/)
+   GALERÍA
    ========================================================== */
 const galeriaImagenes = [
   { src: "assets/img/galeria-1.jpg", alt: "Momento especial 1" },
@@ -208,7 +202,6 @@ function pintarFaq() {
     const respuesta = item.querySelector(".faq-answer");
     boton.addEventListener("click", () => {
       const abierto = item.classList.contains("open");
-      // Cerramos todos los demás para un acordeón limpio
       acordeon.querySelectorAll(".faq-item.open").forEach(other => {
         if (other !== item) {
           other.classList.remove("open");
@@ -286,11 +279,6 @@ function validarFormulario(form) {
   return valido;
 }
 
-/**
- * Envía la confirmación a Supabase (tabla `rsvp`).
- * Si Supabase no está configurado, muestra un error amigable
- * en lugar de fallar silenciosamente.
- */
 async function enviarConfirmacion(datos) {
   if (!supabaseClient) {
     throw new Error("Supabase no está configurado todavía.");
@@ -322,10 +310,12 @@ function inicializarFormularioRsvp() {
 
     if (!validarFormulario(form)) return;
 
+    const valorAsistencia = form.querySelector('input[name="asistencia"]:checked').value;
+
     const datos = {
       nombre: form.nombre.value.trim(),
-      personas: 1, // Campo de número de personas removido del formulario; se guarda un valor por defecto
-      asistencia: form.querySelector('input[name="asistencia"]:checked').value,
+      personas: 1,
+      asistencia: valorAsistencia === "si" || valorAsistencia === "true" || valorAsistencia === "1",
       comentarios: form.comentarios.value.trim()
     };
 
@@ -348,7 +338,7 @@ function inicializarFormularioRsvp() {
 }
 
 /* ==========================================================
-   SCROLL REVEAL (IntersectionObserver)
+   SCROLL REVEAL Y EXTRAS
    ========================================================== */
 let revealObserver = null;
 
@@ -369,9 +359,6 @@ function observarReveal() {
   document.querySelectorAll("[data-reveal]:not(.is-visible)").forEach(el => revealObserver.observe(el));
 }
 
-/* ==========================================================
-   PARALLAX LIGERO EN EL HERO
-   ========================================================== */
 function inicializarParallax() {
   const bg = document.querySelector("[data-parallax]");
   if (!bg) return;
@@ -383,36 +370,33 @@ function inicializarParallax() {
   }, { passive: true });
 }
 
-/* ==========================================================
-   BOTÓN VOLVER ARRIBA
-   ========================================================== */
 function inicializarBackToTop() {
   const btn = document.getElementById("backToTop");
+  if (!btn) return;
   window.addEventListener("scroll", () => {
     btn.classList.toggle("visible", window.scrollY > 500);
   }, { passive: true });
   btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 }
 
-/* ==========================================================
-   LOADER INICIAL
-   ========================================================== */
 function inicializarLoader() {
   window.addEventListener("load", () => {
     setTimeout(() => {
-      document.getElementById("loader").classList.add("loader-hidden");
+      const loader = document.getElementById("loader");
+      if (loader) loader.classList.add("loader-hidden");
     }, 500);
   });
 }
 
-/* ==========================================================
-   LIGHTBOX — eventos de cierre
-   ========================================================== */
 function inicializarLightbox() {
-  document.getElementById("lightboxClose").addEventListener("click", cerrarLightbox);
-  document.getElementById("lightbox").addEventListener("click", (e) => {
-    if (e.target.id === "lightbox") cerrarLightbox();
-  });
+  const closeBtn = document.getElementById("lightboxClose");
+  const lightbox = document.getElementById("lightbox");
+  if (closeBtn) closeBtn.addEventListener("click", cerrarLightbox);
+  if (lightbox) {
+    lightbox.addEventListener("click", (e) => {
+      if (e.target.id === "lightbox") cerrarLightbox();
+    });
+  }
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") cerrarLightbox();
   });

@@ -5,7 +5,7 @@
    ========================================================== */
 
 const evento = {
-  nombre: "Mi Fiesta",
+  nombre: "Mi Fiesta de graduación",
   fecha: "2026-08-08",          // formato YYYY-MM-DD
   hora: "15:00",                 // formato 24h HH:MM
   lugar: "Jardín Rebollar",

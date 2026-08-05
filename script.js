@@ -171,12 +171,6 @@ function pintarFaq() {
         : "El lugar no cuenta con estacionamiento propio."
     },
     {
-      pregunta: "¿Puedo llevar acompañante?",
-      respuesta: evento.acompanantes > 0
-        ? `Sí. Puedes llevar únicamente ${evento.acompanantes} acompañante${evento.acompanantes > 1 ? "s" : ""}.`
-        : "Este evento es exclusivo para invitados directos."
-    },
-    {
       pregunta: "¿Cómo confirmo mi asistencia?",
       respuesta: "Llena el formulario en la sección de confirmación y presiona \"Confirmar asistencia\"."
     },

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel de administración — Confirmaciones</title>
+<meta name="robots" content="noindex, nofollow" />
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#14171F',
+          gold: { DEFAULT: '#C9A876', light: '#E4D3AC', dark: '#8F7440' },
+          wine: '#5B2333',
+          ivory: '#F7F3EC'
+        },
+        fontFamily: { sans: ['Poppins', 'sans-serif'] }
+      }
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  body { font-family: 'Poppins', sans-serif; }
+  .badge-si { background: rgba(122,184,132,0.15); color: #2f7d3b; }
+  .badge-no { background: rgba(224,122,106,0.15); color: #b8402c; }
+  table tbody tr:hover { background: rgba(20,23,31,0.03); }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #d9d2c3; border-radius: 8px; }
+  .hidden-panel { display: none !important; }
+</style>
+</head>
+<body class="bg-ivory text-ink min-h-screen">
+
+  <!-- ============================================================ -->
+  <!-- PANTALLA DE INICIO DE SESIÓN                                   -->
+  <!-- ============================================================ -->
+  <div id="loginScreen" class="min-h-screen flex items-center justify-center px-6 bg-ink">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <div class="w-14 h-14 rounded-2xl bg-gold flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-lock text-ink text-lg"></i>
+        </div>
+        <p class="text-gold-light text-xs tracking-[0.2em] uppercase font-medium">Acceso restringido</p>
+        <h1 class="text-ivory text-xl font-semibold mt-1">Panel de administración</h1>
+      </div>
+
+      <form id="loginForm" class="bg-white/[0.04] border border-white/10 rounded-2xl p-7 space-y-5 backdrop-blur">
+        <div>
+          <label for="loginUser" class="block text-xs font-medium text-ivory/70 mb-2">Usuario</label>
+          <input type="text" id="loginUser" autocomplete="username" required
+            class="w-full bg-white/[0.06] border border-white/15 text-ivory rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gold placeholder:text-ivory/30"
+            placeholder="Tu usuario" />
+        </div>
+        <div>
+          <label for="loginPass" class="block text-xs font-medium text-ivory/70 mb-2">Contraseña</label>
+          <div class="relative">
+            <input type="password" id="loginPass" autocomplete="current-password" required
+              class="w-full bg-white/[0.06] border border-white/15 text-ivory rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-gold placeholder:text-ivory/30"
+              placeholder="Tu contraseña" />
+            <button type="button" id="togglePass" tabindex="-1" aria-label="Mostrar u ocultar contraseña"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-ivory/40 hover:text-ivory/70 text-sm">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <p id="loginError" class="text-red-300 text-xs hidden-panel" role="alert">
+          <i class="fa-solid fa-circle-exclamation mr-1"></i> Usuario o contraseña incorrectos.
+        </p>
+
+        <button type="submit" class="w-full bg-gold hover:bg-gold-light text-ink font-medium text-sm py-3 rounded-xl transition-colors">
+          Ingresar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- CONTENIDO DEL PANEL (visible tras iniciar sesión)              -->
+  <!-- ============================================================ -->
+  <div id="appContent" class="hidden-panel">
+
+    <header class="bg-ink py-8 px-6">
+      <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <p class="text-gold-light text-xs tracking-[0.2em] uppercase font-medium">Panel de administración</p>
+          <h1 class="text-ivory text-2xl font-semibold mt-1">Confirmaciones de asistencia (RSVP)</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="csvBtn" class="inline-flex items-center gap-2 bg-gold hover:bg-gold-light text-ink font-medium text-sm px-5 py-2.5 rounded-full transition-colors">
+            <i class="fa-solid fa-file-csv"></i> Descargar CSV
+          </button>
+          <button id="refreshBtn" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-ivory font-medium text-sm px-5 py-2.5 rounded-full transition-colors">
+            <i class="fa-solid fa-rotate"></i> Actualizar
+          </button>
+          <button id="logoutBtn" title="Cerrar sesión" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-ivory transition-colors">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-10">
+
+      <!-- Estado de configuración de Supabase -->
+      <div id="configWarning" class="hidden-panel bg-amber-50 border border-amber-300 text-amber-800 text-sm rounded-xl p-4 mb-8">
+        <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+        Falta configurar tus credenciales de Supabase en <code>script.js</code> (o directamente aquí abajo) para poder ver los datos reales.
+      </div>
+
+      <!-- Totales -->
+      <section class="grid sm:grid-cols-3 gap-5 mb-10">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
+          <p class="text-xs uppercase tracking-wide text-black/40 font-medium">Confirmaciones "Sí"</p>
+          <p class="text-3xl font-semibold mt-2" id="totalSi">0</p>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
+          <p class="text-xs uppercase tracking-wide text-black/40 font-medium">Confirmaciones "No"</p>
+          <p class="text-3xl font-semibold mt-2" id="totalNo">0</p>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
+          <p class="text-xs uppercase tracking-wide text-black/40 font-medium">Total de personas confirmadas</p>
+          <p class="text-3xl font-semibold mt-2" id="totalPersonas">0</p>
+        </div>
+      </section>
+
+      <!-- Buscador y filtro -->
+      <section class="flex flex-col sm:flex-row gap-4 mb-6">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-black/30 text-sm"></i>
+          <input id="searchInput" type="text" placeholder="Buscar por nombre o comentario…"
+            class="w-full pl-10 pr-4 py-3 rounded-xl border border-black/10 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+        </div>
+        <select id="filterAsistencia" class="rounded-xl border border-black/10 bg-white text-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gold">
+          <option value="todos">Todos</option>
+          <option value="si">Solo "Sí asistiré"</option>
+          <option value="no">Solo "No podré"</option>
+        </select>
+      </section>
+
+      <!-- Tabla -->
+      <section class="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-black/[0.03] text-left text-xs uppercase tracking-wide text-black/40">
+              <tr>
+                <th class="px-5 py-3.5 font-medium">Nombre</th>
+                <th class="px-5 py-3.5 font-medium">Personas</th>
+                <th class="px-5 py-3.5 font-medium">Asistencia</th>
+                <th class="px-5 py-3.5 font-medium">Comentarios</th>
+                <th class="px-5 py-3.5 font-medium">Fecha de registro</th>
+              </tr>
+            </thead>
+            <tbody id="tablaBody" class="divide-y divide-black/5">
+              <!-- Filas generadas dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="emptyState" class="hidden-panel text-center py-16 text-black/40">
+          <i class="fa-regular fa-folder-open text-3xl mb-3"></i>
+          <p class="text-sm">Aún no hay confirmaciones registradas.</p>
+        </div>
+
+        <div id="loadingState" class="text-center py-16 text-black/40">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-3"></i>
+          <p class="text-sm">Cargando confirmaciones…</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    /* ============================================================
+       CREDENCIALES DE ACCESO AL PANEL
+       ------------------------------------------------------------
+       Esto es una protección básica del lado del cliente, pensada
+       para evitar que cualquier visitante casual vea las
+       confirmaciones. NO es seguridad real: cualquier persona con
+       conocimientos técnicos puede leer estas credenciales en el
+       código fuente de la página. Ver README.md, sección 5, para
+       una alternativa más segura (Supabase Auth).
+       ============================================================ */
+    const ADMIN_USER = "panda";
+    const ADMIN_PASS = "@Sddo192074*";
+    const AUTH_KEY = "rsvp_admin_autenticado";
+
+    /* ============================================================
+       CONFIGURACIÓN DE SUPABASE
+       Usa las mismas credenciales que en script.js
+       ============================================================ */
+    const SUPABASE_URL = "PEGA_AQUI_TU_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "PEGA_AQUI_TU_SUPABASE_ANON_KEY";
+
+    let supabaseClient = null;
+    let registros = [];
+
+    /* ---------------- Autenticación ---------------- */
+    function estaAutenticado() {
+      return sessionStorage.getItem(AUTH_KEY) === "true";
+    }
+
+    function mostrarPanel() {
+      document.getElementById("loginScreen").classList.add("hidden-panel");
+      document.getElementById("appContent").classList.remove("hidden-panel");
+      if (inicializarSupabase()) cargarConfirmaciones();
+    }
+
+    function mostrarLogin() {
+      document.getElementById("appContent").classList.add("hidden-panel");
+      document.getElementById("loginScreen").classList.remove("hidden-panel");
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const usuario = document.getElementById("loginUser").value.trim();
+      const clave = document.getElementById("loginPass").value;
+      const errorMsg = document.getElementById("loginError");
+
+      if (usuario === ADMIN_USER && clave === ADMIN_PASS) {
+        errorMsg.classList.add("hidden-panel");
+        sessionStorage.setItem(AUTH_KEY, "true");
+        mostrarPanel();
+      } else {
+        errorMsg.classList.remove("hidden-panel");
+      }
+    });
+
+    document.getElementById("togglePass").addEventListener("click", () => {
+      const input = document.getElementById("loginPass");
+      const icon = document.querySelector("#togglePass i");
+      const esTexto = input.type === "text";
+      input.type = esTexto ? "password" : "text";
+      icon.classList.toggle("fa-eye", esTexto);
+      icon.classList.toggle("fa-eye-slash", !esTexto);
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      sessionStorage.removeItem(AUTH_KEY);
+      mostrarLogin();
+    });
+
+    /* ---------------- Supabase / datos ---------------- */
+    function estaConfigurado() {
+      return SUPABASE_URL && !SUPABASE_URL.includes("PEGA_AQUI") &&
+             SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("PEGA_AQUI");
+    }
+
+    function inicializarSupabase() {
+      if (!estaConfigurado()) {
+        document.getElementById("configWarning").classList.remove("hidden-panel");
+        document.getElementById("loadingState").classList.add("hidden-panel");
+        return false;
+      }
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      return true;
+    }
+
+    async function cargarConfirmaciones() {
+      const loadingState = document.getElementById("loadingState");
+      loadingState.classList.remove("hidden-panel");
+
+      const { data, error } = await supabaseClient
+        .from("rsvp")
+        .select("*")
+        .order("fecha_registro", { ascending: false });
+
+      loadingState.classList.add("hidden-panel");
+
+      if (error) {
+        console.error("Error cargando confirmaciones:", error);
+        return;
+      }
+
+      registros = data || [];
+      renderizarTabla();
+      actualizarTotales();
+    }
+
+    function formatearFecha(fechaISO) {
+      if (!fechaISO) return "—";
+      const d = new Date(fechaISO);
+      return d.toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function renderizarTabla() {
+      const busqueda = document.getElementById("searchInput").value.trim().toLowerCase();
+      const filtro = document.getElementById("filterAsistencia").value;
+
+      const filtrados = registros.filter(r => {
+        const coincideBusqueda =
+          (r.nombre || "").toLowerCase().includes(busqueda) ||
+          (r.comentarios || "").toLowerCase().includes(busqueda);
+        const coincideFiltro = filtro === "todos" || r.asistencia === filtro;
+        return coincideBusqueda && coincideFiltro;
+      });
+
+      const tbody = document.getElementById("tablaBody");
+      const emptyState = document.getElementById("emptyState");
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = "";
+        emptyState.classList.remove("hidden-panel");
+        return;
+      }
+      emptyState.classList.add("hidden-panel");
+
+      tbody.innerHTML = filtrados.map(r => `
+        <tr>
+          <td class="px-5 py-3.5 font-medium">${escapeHtml(r.nombre || "—")}</td>
+          <td class="px-5 py-3.5">${r.personas ?? "—"}</td>
+          <td class="px-5 py-3.5">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${r.asistencia === "si" ? "badge-si" : "badge-no"}">
+              ${r.asistencia === "si" ? "Sí asistirá" : "No podrá"}
+            </span>
+          </td>
+          <td class="px-5 py-3.5 text-black/60 max-w-xs truncate" title="${escapeHtml(r.comentarios || "")}">${escapeHtml(r.comentarios || "—")}</td>
+          <td class="px-5 py-3.5 text-black/50 whitespace-nowrap">${formatearFecha(r.fecha_registro)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function actualizarTotales() {
+      const totalSi = registros.filter(r => r.asistencia === "si").length;
+      const totalNo = registros.filter(r => r.asistencia === "no").length;
+      const totalPersonas = registros
+        .filter(r => r.asistencia === "si")
+        .reduce((acc, r) => acc + (Number(r.personas) || 0), 0);
+
+      document.getElementById("totalSi").textContent = totalSi;
+      document.getElementById("totalNo").textContent = totalNo;
+      document.getElementById("totalPersonas").textContent = totalPersonas;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /* ---------------- Exportar CSV ---------------- */
+    function celdaCSV(valor) {
+      const texto = String(valor ?? "").replace(/"/g, '""');
+      return `"${texto}"`;
+    }
+
+    function descargarCSV() {
+      const asistentes = registros.filter(r => r.asistencia === "si");
+
+      if (asistentes.length === 0) {
+        alert("Todavía no hay personas confirmadas para exportar.");
+        return;
+      }
+
+      const encabezados = ["Nombre", "Personas", "Comentarios", "Fecha de registro"];
+      const filas = asistentes.map(r => [
+        celdaCSV(r.nombre),
+        celdaCSV(r.personas ?? ""),
+        celdaCSV(r.comentarios || ""),
+        celdaCSV(formatearFecha(r.fecha_registro))
+      ].join(","));
+
+      // \uFEFF (BOM) para que Excel reconozca los acentos correctamente
+      const contenidoCSV = "\uFEFF" + [encabezados.map(celdaCSV).join(","), ...filas].join("\r\n");
+
+      const blob = new Blob([contenidoCSV], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      const fechaArchivo = new Date().toISOString().slice(0, 10);
+
+      enlace.href = url;
+      enlace.download = `asistentes-confirmados-${fechaArchivo}.csv`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      document.body.removeChild(enlace);
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("csvBtn").addEventListener("click", descargarCSV);
+    document.getElementById("searchInput").addEventListener("input", renderizarTabla);
+    document.getElementById("filterAsistencia").addEventListener("change", renderizarTabla);
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+      if (supabaseClient) cargarConfirmaciones();
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (estaAutenticado()) {
+        mostrarPanel();
+      } else {
+        mostrarLogin();
+      }
+    });
+  </script>
+</body>
+</html>

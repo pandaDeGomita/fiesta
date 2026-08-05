@@ -39,7 +39,7 @@
 <body class="bg-ivory text-ink min-h-screen">
 
   <!-- ============================================================ -->
-  <!-- PANTALLA DE INICIO DE SESIÓN                                   -->
+  <!-- PANTALLA DE INICIO DE SESIÓN                                 -->
   <!-- ============================================================ -->
   <div id="loginScreen" class="min-h-screen flex items-center justify-center px-6 bg-ink">
     <div class="w-full max-w-sm">
@@ -112,7 +112,7 @@
       <!-- Estado de configuración de Supabase -->
       <div id="configWarning" class="hidden-panel bg-amber-50 border border-amber-300 text-amber-800 text-sm rounded-xl p-4 mb-8">
         <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-        Falta configurar tus credenciales de Supabase en <code>script.js</code> (o directamente aquí abajo) para poder ver los datos reales.
+        Falta configurar tus credenciales de Supabase para poder ver los datos reales.
       </div>
 
       <!-- Totales -->
@@ -179,31 +179,24 @@
   </div>
 
   <script>
-    /* ============================================================
-       CREDENCIALES DE ACCESO AL PANEL
-       ------------------------------------------------------------
-       Esto es una protección básica del lado del cliente, pensada
-       para evitar que cualquier visitante casual vea las
-       confirmaciones. NO es seguridad real: cualquier persona con
-       conocimientos técnicos puede leer estas credenciales en el
-       código fuente de la página. Ver README.md, sección 5, para
-       una alternativa más segura (Supabase Auth).
-       ============================================================ */
+    /* Credenciales del Admin */
     const ADMIN_USER = "panda";
     const ADMIN_PASS = "@Sddo192074*";
     const AUTH_KEY = "rsvp_admin_autenticado";
 
-    /* ============================================================
-       CONFIGURACIÓN DE SUPABASE
-       Usa las mismas credenciales que en script.js
-       ============================================================ */
-    const SUPABASE_URL = "PEGA_AQUI_TU_SUPABASE_URL";
-    const SUPABASE_ANON_KEY = "PEGA_AQUI_TU_SUPABASE_ANON_KEY";
+    /* Configuración de Supabase */
+    const SUPABASE_URL = "https://kyudezssecqqutgadqbe.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dWRlenNzZWNxcXV0Z2FkcWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4ODkyNTcsImV4cCI6MjEwMTQ2NTI1N30.z2xxwoft2DBXZZ8ww4ikqQG_8U-WYofan_fSWqyDa0I";
 
     let supabaseClient = null;
     let registros = [];
 
-    /* ---------------- Autenticación ---------------- */
+    /* Helper para normalizar la asistencia boolean/string */
+    function esAsistenciaPositiva(val) {
+      return val === true || val === "si" || val === "true" || val === 1;
+    }
+
+    /* Autenticación */
     function estaAutenticado() {
       return sessionStorage.getItem(AUTH_KEY) === "true";
     }
@@ -248,7 +241,7 @@
       mostrarLogin();
     });
 
-    /* ---------------- Supabase / datos ---------------- */
+    /* Supabase / Carga de datos */
     function estaConfigurado() {
       return SUPABASE_URL && !SUPABASE_URL.includes("PEGA_AQUI") &&
              SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("PEGA_AQUI");
@@ -299,7 +292,12 @@
         const coincideBusqueda =
           (r.nombre || "").toLowerCase().includes(busqueda) ||
           (r.comentarios || "").toLowerCase().includes(busqueda);
-        const coincideFiltro = filtro === "todos" || r.asistencia === filtro;
+        
+        const esSi = esAsistenciaPositiva(r.asistencia);
+        const coincideFiltro = filtro === "todos" || 
+                              (filtro === "si" && esSi) || 
+                              (filtro === "no" && !esSi);
+
         return coincideBusqueda && coincideFiltro;
       });
 
@@ -313,26 +311,28 @@
       }
       emptyState.classList.add("hidden-panel");
 
-      tbody.innerHTML = filtrados.map(r => `
+      tbody.innerHTML = filtrados.map(r => {
+        const asiste = esAsistenciaPositiva(r.asistencia);
+        return `
         <tr>
           <td class="px-5 py-3.5 font-medium">${escapeHtml(r.nombre || "—")}</td>
           <td class="px-5 py-3.5">${r.personas ?? "—"}</td>
           <td class="px-5 py-3.5">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${r.asistencia === "si" ? "badge-si" : "badge-no"}">
-              ${r.asistencia === "si" ? "Sí asistirá" : "No podrá"}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${asiste ? "badge-si" : "badge-no"}">
+              ${asiste ? "Sí asistirá" : "No podrá"}
             </span>
           </td>
           <td class="px-5 py-3.5 text-black/60 max-w-xs truncate" title="${escapeHtml(r.comentarios || "")}">${escapeHtml(r.comentarios || "—")}</td>
           <td class="px-5 py-3.5 text-black/50 whitespace-nowrap">${formatearFecha(r.fecha_registro)}</td>
         </tr>
-      `).join("");
+      `}).join("");
     }
 
     function actualizarTotales() {
-      const totalSi = registros.filter(r => r.asistencia === "si").length;
-      const totalNo = registros.filter(r => r.asistencia === "no").length;
+      const totalSi = registros.filter(r => esAsistenciaPositiva(r.asistencia)).length;
+      const totalNo = registros.filter(r => !esAsistenciaPositiva(r.asistencia)).length;
       const totalPersonas = registros
-        .filter(r => r.asistencia === "si")
+        .filter(r => esAsistenciaPositiva(r.asistencia))
         .reduce((acc, r) => acc + (Number(r.personas) || 0), 0);
 
       document.getElementById("totalSi").textContent = totalSi;
@@ -346,14 +346,14 @@
       return div.innerHTML;
     }
 
-    /* ---------------- Exportar CSV ---------------- */
+    /* Exportar CSV */
     function celdaCSV(valor) {
       const texto = String(valor ?? "").replace(/"/g, '""');
       return `"${texto}"`;
     }
 
     function descargarCSV() {
-      const asistentes = registros.filter(r => r.asistencia === "si");
+      const asistentes = registros.filter(r => esAsistenciaPositiva(r.asistencia));
 
       if (asistentes.length === 0) {
         alert("Todavía no hay personas confirmadas para exportar.");
@@ -368,7 +368,6 @@
         celdaCSV(formatearFecha(r.fecha_registro))
       ].join(","));
 
-      // \uFEFF (BOM) para que Excel reconozca los acentos correctamente
       const contenidoCSV = "\uFEFF" + [encabezados.map(celdaCSV).join(","), ...filas].join("\r\n");
 
       const blob = new Blob([contenidoCSV], { type: "text/csv;charset=utf-8;" });

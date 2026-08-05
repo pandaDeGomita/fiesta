@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Estás invitado — Confirma tu asistencia</title>
+<meta name="description" content="Invitación digital para confirmar tu asistencia a la fiesta. ¡Te esperamos!" />
+
+<!-- ===== SEO básico / Open Graph ===== -->
+<meta property="og:title" content="Estás invitado — Confirma tu asistencia" />
+<meta property="og:description" content="Será un gusto compartir este día contigo. Confirma tu asistencia aquí." />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#14171F" />
+
+<!-- ===== Fuentes: Poppins (Google Fonts) ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+<!-- ===== Font Awesome ===== -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+<!-- ===== Tailwind CSS (CDN) ===== -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Extendemos la configuración de Tailwind con nuestra paleta de marca.
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#14171F',
+          gold: {
+            DEFAULT: '#C9A876',
+            light: '#E4D3AC',
+            dark: '#8F7440'
+          },
+          wine: '#5B2333',
+          ivory: '#F7F3EC',
+          charcoal: '#2B2B2E'
+        },
+        fontFamily: {
+          sans: ['Poppins', 'sans-serif']
+        },
+        boxShadow: {
+          soft: '0 20px 60px -15px rgba(20,23,31,0.25)',
+          glow: '0 0 40px rgba(201,168,118,0.35)'
+        }
+      }
+    }
+  };
+</script>
+
+<!-- ===== Supabase JS (librería oficial vía CDN) ===== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="bg-ivory text-charcoal font-sans antialiased overflow-x-hidden">
+
+  <!-- ============================================================ -->
+  <!-- LOADER INICIAL                                                -->
+  <!-- ============================================================ -->
+  <div id="loader" class="loader" role="status" aria-label="Cargando invitación">
+    <div class="loader-seal">
+      <i class="fa-solid fa-champagne-glasses"></i>
+    </div>
+    <p class="loader-text">Preparando tu invitación…</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- BOTÓN VOLVER ARRIBA                                           -->
+  <!-- ============================================================ -->
+  <button id="backToTop" aria-label="Volver arriba" class="back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <!-- ============================================================ -->
+  <!-- BARRA DE NAVEGACIÓN FLOTANTE                                  -->
+  <!-- ============================================================ -->
+  <nav class="fixed top-0 inset-x-0 z-40 nav-glass" aria-label="Navegación principal">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <span class="font-semibold tracking-wide text-ivory text-sm md:text-base" id="navEventName">La Fiesta</span>
+      <a href="#rsvp" class="hidden sm:inline-flex items-center gap-2 text-xs md:text-sm font-medium text-ink bg-gold hover:bg-gold-light transition-colors duration-300 px-5 py-2.5 rounded-full shadow-glow">
+        <i class="fa-solid fa-check"></i> Confirmar
+        
+         <a href="admin.html"
+         class="inline-flex items-center gap-2 text-xs md:text-sm font-medium text-ivory border border-gold hover:bg-gold hover:text-ink transition-colors duration-300 px-5 py-2.5 rounded-full">
+        <i class="fa-solid fa-user-shield"></i>
+        Admin
+      </a>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- HERO                                                          -->
+  <!-- ============================================================ -->
+  <header id="hero" class="hero-section relative min-h-screen flex items-center justify-center text-center px-6">
+    <div class="hero-bg" data-parallax></div>
+    <div class="hero-overlay"></div>
+
+    <div class="relative z-10 max-w-3xl mx-auto reveal" data-reveal>
+      <p class="eyebrow text-gold-light">Con mucho cariño te invitamos a</p>
+      <h1 id="heroEventName" class="font-display text-5xl sm:text-6xl md:text-7xl text-ivory font-semibold leading-tight mt-4">
+        Mi Fiesta
+      </h1>
+      <p id="heroMessage" class="text-ivory/80 text-base sm:text-lg mt-6 max-w-xl mx-auto leading-relaxed">
+        Será un gusto compartir este día contigo. ¡Esperamos contar con tu presencia!
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 text-ivory/90 text-sm sm:text-base">
+        <span class="flex items-center gap-2"><i class="fa-regular fa-calendar text-gold"></i> <span id="heroDate">8 de agosto de 2026</span></span>
+        <span class="hidden sm:inline text-ivory/30">•</span>
+        <span class="flex items-center gap-2"><i class="fa-regular fa-clock text-gold"></i> <span id="heroTime">4:00 PM</span></span>
+      </div>
+
+      <a href="#rsvp" class="cta-btn mt-10">
+        Confirmar asistencia
+        <i class="fa-solid fa-arrow-down-long"></i>
+      </a>
+    </div>
+
+    <a href="#countdown" class="scroll-cue" aria-label="Desplázate hacia abajo">
+      <i class="fa-solid fa-chevron-down"></i>
+    </a>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- CUENTA REGRESIVA                                              -->
+  <!-- ============================================================ -->
+  <section id="countdown" class="bg-ink py-20 px-6">
+    <div class="max-w-4xl mx-auto text-center reveal" data-reveal>
+      <p class="eyebrow text-gold-light">Falta muy poco</p>
+      <h2 class="font-display text-3xl md:text-4xl text-ivory font-semibold mt-3 mb-10">La cuenta regresiva ya comenzó</h2>
+
+      <div class="grid grid-cols-4 gap-3 sm:gap-6 max-w-2xl mx-auto" id="countdownGrid">
+        <div class="countdown-card">
+          <span class="countdown-number" id="cd-days">00</span>
+          <span class="countdown-label">Días</span>
+        </div>
+        <div class="countdown-card">
+          <span class="countdown-number" id="cd-hours">00</span>
+          <span class="countdown-label">Horas</span>
+        </div>
+        <div class="countdown-card">
+          <span class="countdown-number" id="cd-minutes">00</span>
+          <span class="countdown-label">Min</span>
+        </div>
+        <div class="countdown-card">
+          <span class="countdown-number" id="cd-seconds">00</span>
+          <span class="countdown-label">Seg</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- DETALLES DEL EVENTO                                           -->
+  <!-- ============================================================ -->
+  <section id="detalles" class="py-24 px-6 bg-ivory">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center max-w-xl mx-auto reveal" data-reveal>
+        <p class="eyebrow text-wine">Los detalles</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold mt-3">Todo lo que necesitas saber</h2>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-14" id="infoCardsGrid">
+        <!-- Las tarjetas se generan dinámicamente desde script.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- GALERÍA                                                       -->
+  <!-- ============================================================ -->
+  <section id="galeria" class="py-24 px-6 bg-white">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center max-w-xl mx-auto reveal" data-reveal>
+        <p class="eyebrow text-wine">Un vistazo</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold mt-3">Momentos que celebraremos</h2>
+      </div>
+
+      <div class="gallery-grid mt-14" id="galleryGrid">
+        <!-- Imágenes generadas dinámicamente -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Vista ampliada de imagen">
+    <button id="lightboxClose" class="lightbox-close" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    <img id="lightboxImg" src="" alt="" />
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- RSVP - CONFIRMACIÓN DE ASISTENCIA                             -->
+  <!-- ============================================================ -->
+  <section id="rsvp" class="py-24 px-6 bg-ink relative overflow-hidden">
+    <div class="rsvp-glow"></div>
+    <div class="max-w-xl mx-auto relative z-10">
+      <div class="text-center reveal" data-reveal>
+        <p class="eyebrow text-gold-light">Última confirmación</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold text-ivory mt-3">Confirma tu asistencia</h2>
+        <p class="text-ivory/70 mt-4" id="rsvpDeadlineText">Por favor confirma antes del 5 de agosto de 2026.</p>
+      </div>
+
+      <form id="rsvpForm" class="glass-card mt-10 p-8 sm:p-10 space-y-6 reveal" data-reveal novalidate>
+        <div>
+          <label for="nombre" class="form-label">Nombre completo</label>
+          <input type="text" id="nombre" name="nombre" class="form-input" placeholder="Escribe tu nombre" required autocomplete="name" />
+          <p class="form-error" id="error-nombre" role="alert"></p>
+        </div>
+
+        <fieldset>
+          <legend class="form-label">¿Podrás acompañarnos?</legend>
+          <div class="grid grid-cols-2 gap-4 mt-2">
+            <label class="radio-card">
+              <input type="radio" name="asistencia" value="si" required />
+              <span><i class="fa-solid fa-circle-check"></i> Sí asistiré</span>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="asistencia" value="no" required />
+              <span><i class="fa-solid fa-circle-xmark"></i> No podré</span>
+            </label>
+          </div>
+          <p class="form-error" id="error-asistencia" role="alert"></p>
+        </fieldset>
+
+        <div>
+          <label for="comentarios" class="form-label">Comentarios <span class="text-ivory/40 font-normal">(opcional)</span></label>
+          <textarea id="comentarios" name="comentarios" rows="3" class="form-input resize-none" placeholder="Puedes dejar un mensaje o lo que quieras contarnos"></textarea>
+        </div>
+
+        <button type="submit" id="rsvpSubmit" class="cta-btn w-full justify-center">
+          <span id="rsvpSubmitText">Confirmar asistencia</span>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+
+        <div id="rsvpSuccess" class="rsvp-feedback rsvp-success" hidden>
+          <i class="fa-solid fa-circle-check"></i>
+          <div>
+            <p class="font-semibold">¡Gracias por confirmar!</p>
+            <p class="text-sm opacity-80">Hemos recibido tu respuesta correctamente.</p>
+          </div>
+        </div>
+
+        <div id="rsvpErrorMsg" class="rsvp-feedback rsvp-error" hidden>
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div>
+            <p class="font-semibold">No pudimos enviar tu confirmación</p>
+            <p class="text-sm opacity-80">Verifica tu conexión e inténtalo de nuevo.</p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- UBICACIÓN                                                     -->
+  <!-- ============================================================ -->
+  <section id="ubicacion" class="py-24 px-6 bg-ivory">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center max-w-xl mx-auto reveal" data-reveal>
+        <p class="eyebrow text-wine">No te pierdas</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold mt-3">¿Cómo llegar?</h2>
+        <p class="text-charcoal/70 mt-3" id="direccionTexto">Dirección completa</p>
+      </div>
+
+      <div class="map-card mt-12 reveal" data-reveal>
+        <iframe
+          id="mapaEmbed"
+          class="map-iframe"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+          title="Ubicación del evento">
+        </iframe>
+      </div>
+
+      <div class="text-center mt-8">
+        <a id="mapaBoton" href="#" target="_blank" rel="noopener" class="cta-btn-outline">
+          <i class="fa-solid fa-location-dot"></i> Abrir en Google Maps
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PREGUNTAS FRECUENTES                                          -->
+  <!-- ============================================================ -->
+  <section id="faq" class="py-24 px-6 bg-white">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center reveal" data-reveal>
+        <p class="eyebrow text-wine">¿Dudas?</p>
+        <h2 class="font-display text-3xl md:text-4xl font-semibold mt-3">Preguntas frecuentes</h2>
+      </div>
+
+      <div class="mt-12 space-y-4" id="faqAccordion">
+        <!-- Los items se generan dinámicamente desde script.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- FOOTER                                                        -->
+  <!-- ============================================================ -->
+  <footer class="bg-ink text-center py-12 px-6">
+    <p class="font-display text-2xl text-ivory">¡Te esperamos!</p>
+    <p class="text-ivory/40 text-xs mt-4 tracking-wide">Created by Panda de Gomita</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

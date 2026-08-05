@@ -116,7 +116,7 @@
       </div>
 
       <!-- Totales -->
-      <section class="grid sm:grid-cols-3 gap-5 mb-10">
+      <section class="grid sm:grid-cols-2 gap-5 mb-10">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
           <p class="text-xs uppercase tracking-wide text-black/40 font-medium">Confirmaciones "Sí"</p>
           <p class="text-3xl font-semibold mt-2" id="totalSi">0</p>
@@ -124,10 +124,6 @@
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
           <p class="text-xs uppercase tracking-wide text-black/40 font-medium">Confirmaciones "No"</p>
           <p class="text-3xl font-semibold mt-2" id="totalNo">0</p>
-        </div>
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-black/5">
-          <p class="text-xs uppercase tracking-wide text-black/40 font-medium">Total de personas confirmadas</p>
-          <p class="text-3xl font-semibold mt-2" id="totalPersonas">0</p>
         </div>
       </section>
 
@@ -152,10 +148,10 @@
             <thead class="bg-black/[0.03] text-left text-xs uppercase tracking-wide text-black/40">
               <tr>
                 <th class="px-5 py-3.5 font-medium">Nombre</th>
-                <th class="px-5 py-3.5 font-medium">Personas</th>
                 <th class="px-5 py-3.5 font-medium">Asistencia</th>
                 <th class="px-5 py-3.5 font-medium">Comentarios</th>
                 <th class="px-5 py-3.5 font-medium">Fecha de registro</th>
+                <th class="px-5 py-3.5 font-medium text-center">Acciones</th>
               </tr>
             </thead>
             <tbody id="tablaBody" class="divide-y divide-black/5">
@@ -278,6 +274,28 @@
       actualizarTotales();
     }
 
+    /* Eliminar registro */
+    async function eliminarRegistro(id, nombre) {
+      const confirmar = confirm(`¿Estás seguro de que deseas eliminar el registro de "${nombre}"?`);
+      if (!confirmar) return;
+
+      const { error } = await supabaseClient
+        .from("rsvp")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error al eliminar el registro:", error);
+        alert("Ocurrió un error al intentar eliminar el registro.");
+        return;
+      }
+
+      // Filtrar localmente el registro eliminado y refrescar vista
+      registros = registros.filter(r => r.id !== id);
+      renderizarTabla();
+      actualizarTotales();
+    }
+
     function formatearFecha(fechaISO) {
       if (!fechaISO) return "—";
       const d = new Date(fechaISO);
@@ -313,10 +331,10 @@
 
       tbody.innerHTML = filtrados.map(r => {
         const asiste = esAsistenciaPositiva(r.asistencia);
+        const nombreEscape = escapeHtml(r.nombre || "Sin nombre");
         return `
         <tr>
-          <td class="px-5 py-3.5 font-medium">${escapeHtml(r.nombre || "—")}</td>
-          <td class="px-5 py-3.5">${r.personas ?? "—"}</td>
+          <td class="px-5 py-3.5 font-medium">${nombreEscape}</td>
           <td class="px-5 py-3.5">
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${asiste ? "badge-si" : "badge-no"}">
               ${asiste ? "Sí asistirá" : "No podrá"}
@@ -324,6 +342,14 @@
           </td>
           <td class="px-5 py-3.5 text-black/60 max-w-xs truncate" title="${escapeHtml(r.comentarios || "")}">${escapeHtml(r.comentarios || "—")}</td>
           <td class="px-5 py-3.5 text-black/50 whitespace-nowrap">${formatearFecha(r.fecha_registro)}</td>
+          <td class="px-5 py-3.5 text-center whitespace-nowrap">
+            <button 
+              onclick="eliminarRegistro(${r.id}, '${nombreEscape.replace(/'/g, "\\'")}')" 
+              class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
+              title="Eliminar registro">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </td>
         </tr>
       `}).join("");
     }
@@ -331,13 +357,9 @@
     function actualizarTotales() {
       const totalSi = registros.filter(r => esAsistenciaPositiva(r.asistencia)).length;
       const totalNo = registros.filter(r => !esAsistenciaPositiva(r.asistencia)).length;
-      const totalPersonas = registros
-        .filter(r => esAsistenciaPositiva(r.asistencia))
-        .reduce((acc, r) => acc + (Number(r.personas) || 0), 0);
 
       document.getElementById("totalSi").textContent = totalSi;
       document.getElementById("totalNo").textContent = totalNo;
-      document.getElementById("totalPersonas").textContent = totalPersonas;
     }
 
     function escapeHtml(str) {
@@ -360,10 +382,9 @@
         return;
       }
 
-      const encabezados = ["Nombre", "Personas", "Comentarios", "Fecha de registro"];
+      const encabezados = ["Nombre", "Comentarios", "Fecha de registro"];
       const filas = asistentes.map(r => [
         celdaCSV(r.nombre),
-        celdaCSV(r.personas ?? ""),
         celdaCSV(r.comentarios || ""),
         celdaCSV(formatearFecha(r.fecha_registro))
       ].join(","));

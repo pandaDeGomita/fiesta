@@ -27,9 +27,8 @@ const evento = {
    4. Copia la "anon public" key y pégala en SUPABASE_ANON_KEY
    Instrucciones completas en README.md
    ========================================================== */
-const SUPABASE_URL = "https://kyudezssecqqutgadqbe.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://kyudezssecqqutgadqbe.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dWRlenNzZWNxcXV0Z2FkcWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4ODkyNTcsImV4cCI6MjEwMTQ2NTI1N30.z2xxwoft2DBXZZ8ww4ikqQG_8U-WYofan_fSWqyDa0I";
-
 let supabaseClient = null;
 try {
   if (

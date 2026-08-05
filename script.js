@@ -94,13 +94,6 @@ function pintarDatosEvento() {
       titulo: "Estacionamiento",
       texto: evento.estacionamiento ? "Sí, contamos con estacionamiento disponible." : "No disponible en el lugar."
     },
-    {
-      icon: "fa-solid fa-users",
-      titulo: "Acompañantes",
-      texto: evento.acompanantes > 0
-        ? `Puedes llevar hasta ${evento.acompanantes} acompañante${evento.acompanantes > 1 ? "s" : ""}.`
-        : "Este evento es solo para invitados directos."
-    }
   ];
 
   if (evento.codigoVestimenta) {
